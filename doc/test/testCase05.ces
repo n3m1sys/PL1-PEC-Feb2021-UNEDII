@@ -1,0 +1,27 @@
+/* 
+
+prueba de operadores
+
+*/
+
+vacio principal () {
+
+entero a;
+entero b;
+b = 19;
+a = b++;
+a= a+1+6*2;
+
+escribe("a");
+escribeEnt(a);
+
+
+a = ((3+3)*2);
+
+escribe("asociacion parentesis");
+escribeEnt(a);
+
+
+devuelve;
+
+}

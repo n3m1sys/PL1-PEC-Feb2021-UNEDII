@@ -1,0 +1,19 @@
+/* 
+
+// Operadores logicos &&
+*/
+
+vacio principal () {
+
+entero a;
+
+a = 1 && 0;
+
+escribe("a es 0");
+escribeEnt(a);
+
+
+
+devuelve;
+
+}

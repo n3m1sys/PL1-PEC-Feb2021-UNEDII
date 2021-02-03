@@ -1,0 +1,36 @@
+/* 
+// Aritmetica compleja y variables
+*/
+
+entero test;
+
+vacio principal () {
+
+entero a;
+entero b;
+entero c;
+
+a=6;
+b=3;
+c= a+b;
+
+escribe("c es 9");
+escribeEnt(c);
+
+
+c++;
+
+escribe("c es 10");
+escribeEnt(c);
+
+
+c+=1;
+
+escribe("c es 11");
+escribeEnt(c);
+
+
+
+devuelve;
+
+}

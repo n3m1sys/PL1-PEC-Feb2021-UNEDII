@@ -1,0 +1,7 @@
+vacio principal () {
+
+escribe("imprime");
+
+devuelve;
+
+}

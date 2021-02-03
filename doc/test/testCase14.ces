@@ -1,0 +1,30 @@
+/*
+	Acceso a un vector
+*/
+
+#constante T 10;
+
+tipo entero vector [10];
+
+vacio principal() {
+	
+	entero a = 0;
+	
+	vector vec;
+	
+	mientras(a < 0){
+		vec[a] = a+1;
+		a++;
+	}
+	
+	a = 0;
+	
+	mientras(a < 0){
+		escribeEnt(vec[a]);
+		a += 1;
+	} 
+	
+	/* RESULTADO: 12345678910 */
+	
+	devuelve;
+}

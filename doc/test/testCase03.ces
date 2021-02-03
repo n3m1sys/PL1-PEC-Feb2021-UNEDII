@@ -1,0 +1,13 @@
+#constante VERDADERO 1;
+#constante FALSO 0;
+
+vacio principal () {
+
+escribe("verdadero");
+escribeEnt(VERDADERO);
+escribe("falso");
+escribeEnt(FALSO);
+
+devuelve;
+
+}

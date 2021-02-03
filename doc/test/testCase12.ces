@@ -1,0 +1,21 @@
+/*
+	Comentario Padre
+	
+	/* Comentario hijo 1*/
+	/* Comentario hijo 2*/
+	
+	/* Comentario hijo padre
+		/*
+			Comentario hijo 1
+		*/
+	*/
+	
+	/* Comentario hijo 3 */
+	
+*/
+
+vacio principal() {
+
+	devuelve;
+	
+}

@@ -1,0 +1,36 @@
+
+/* 
+
+// Funciones y paso parmetros
+
+*/
+
+
+entero incrementa (entero x){
+
+	entero c;
+	x = x + 1;
+
+	c = x;
+	devuelve c;
+
+}
+
+
+vacio principal () {
+
+entero a;
+entero b;
+
+a=2;
+
+
+
+b=incrementa (a);
+
+
+
+
+devuelve;
+
+}

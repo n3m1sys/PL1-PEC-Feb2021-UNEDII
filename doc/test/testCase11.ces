@@ -1,0 +1,25 @@
+
+/* 
+
+ Creaci�n y acceso datos complejos, vectores
+
+*/
+
+vacio principal () {
+
+tipo entero vector[3];
+
+vector v1;
+entero c;
+
+v1[1] = 7;
+
+escribe("v1");
+escribeEnt(v1[1]);
+
+c = v1[1] + v[v[2]];
+
+
+devuelve;
+
+}

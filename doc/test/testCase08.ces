@@ -1,0 +1,26 @@
+/* operadores lógicos
+*/
+
+vacio principal () {
+
+entero a;
+entero b;
+entero c;
+
+a=5;
+b=3;
+
+c = a < b;
+
+escribe("c es 0");
+escribeEnt(c);
+
+c = !(a == a);
+
+escribe("c es 0");
+escribeEnt(c);
+
+
+devuelve;
+
+}

@@ -1,0 +1,21 @@
+/*
+	Casos-Alternativas
+*/
+
+vacio principal() {
+	
+	entero a = 1;
+	
+	alternativas (a){
+		caso 1:
+			escribe("Tiene que ser 1");
+			corte;
+		caso 2:
+			escribe("Esto no puede ser");
+			corte;
+		pordefecto:
+			escribe("Esto tampoco puede ser");
+			corte;
+	}
+	devuelve;
+}
