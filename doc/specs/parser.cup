@@ -1,0 +1,370 @@
+package compiler.syntax;
+
+// Declaracion de importaciones 
+//(No modificar las proporcionadas. Se pueden agregar mas)
+
+import java_cup.runtime.Symbol;
+import java.util.*;
+
+import es.uned.lsi.compiler.lexical.*;
+import es.uned.lsi.compiler.code.*;
+import es.uned.lsi.compiler.intermediate.*;
+import es.uned.lsi.compiler.semantic.*;
+import es.uned.lsi.compiler.semantic.symbol.*;
+import es.uned.lsi.compiler.semantic.type.*;
+import es.uned.lsi.compiler.syntax.*;
+
+import compiler.CompilerContext;
+import compiler.lexical.*;
+import compiler.syntax.nonTerminal.*;
+
+import compiler.semantic.symbol.*;
+import compiler.semantic.type.*;
+import compiler.intermediate.*;
+import compiler.code.*;
+
+// Declaracion del codigo de usuario
+
+action code {:
+	
+	SyntaxErrorManager   syntaxErrorManager   = CompilerContext.getSyntaxErrorManager();
+	SemanticErrorManager semanticErrorManager = CompilerContext.getSemanticErrorManager ();
+	ScopeManagerIF       scopeManager         = CompilerContext.getScopeManager ();
+	FinalCodeFactoryIF   finalCodeFactory     = CompilerContext.getFinalCodeFactory ();
+
+	public void emitirMensajeError(String msg){
+		syntaxErrorManager.syntaxError("ERROR SINTACTICO: "  + msg);
+	}
+
+	public void emitirMensajeInfo(String msg){
+		syntaxErrorManager.syntaxInfo("INFO SINTAXIS: "  + msg);
+	}
+
+:}	
+
+parser code {:
+	SyntaxErrorManager syntaxErrorManager = CompilerContext.getSyntaxErrorManager();
+	
+	public void syntax_error(Symbol symbol)
+	{ 
+	    Token token = (Token) symbol.value;
+	    syntaxErrorManager.syntaxError ("Error sintactico", token);	    
+	}
+		
+	public void unrecovered_syntax_error(java_cup.runtime.Symbol symbol)
+	{	
+	    Token token = (Token) symbol.value;
+	    syntaxErrorManager.syntaxFatalError ("Error fatal", token);
+	}
+:}
+
+// Declaracion de terminales (Ejemplo)
+
+terminal Token PLUS;
+terminal Token PROD;
+terminal Token LESS;
+terminal Token EQ;
+terminal Token AND;
+terminal Token NOT;
+terminal Token AUTOINC;
+terminal Token ASIG;
+terminal Token ASIGSUM;
+terminal Token CASE;
+terminal Token CONST;
+terminal Token BREAK;
+terminal Token INT;
+terminal Token PRINT;
+terminal Token PRINTINT;
+terminal Token SWITCH;
+terminal Token WHILE;
+terminal Token DEFAULT;
+terminal Token MAIN;
+terminal Token RETURN;
+terminal Token IF;
+terminal Token ELSE;
+terminal Token TYPE;
+terminal Token VOID;
+terminal Token SEMICOL;
+terminal Token TWOPOINTS;
+terminal Token PARENOP;
+terminal Token PARENCL;
+terminal Token CORCHOP;
+terminal Token CORCHCL;
+terminal Token COMMA;
+terminal Token LLAVEOP;
+terminal Token LLAVECL;
+terminal Token STRING;
+terminal Token ID;
+terminal Token NUM;
+
+// Declaracion de no terminales
+// no modificar los propuestos
+
+non terminal  					program;
+non terminal 	Axiom	axiom;
+non terminal					constantes;
+non terminal					constante;
+non terminal					decglobal;
+non terminal 					declocal;
+non terminal					tipo;
+non terminal					variable;
+non terminal					decvariables;
+non terminal					decvariable;
+non terminal					llamadaFuncNum;
+non terminal					funcion;
+non terminal					funcionEntera;
+non terminal					funcionVacia;
+non terminal					principal;
+non terminal					argsDec;
+non terminal					instrucciones;
+non terminal					instruccion;
+non terminal					expresion;
+non terminal					asignacion;
+non terminal					condicional;
+non terminal					bloqueElse;
+non terminal					alternativas;
+non terminal					bucle;
+non terminal					llamadaVoid;
+non terminal					llamadaPrint;
+non terminal					bloqueCodigo;
+non terminal					bloqueCodigoFuncion;
+non terminal					casos;
+non terminal					argsIn;
+non terminal					accesoVector;
+non terminal 					instruccionSimple;
+
+// Declaracion de relaciones de precedencia
+
+/* PRECEDENCIAS PARA GRAMATICAS DE LA ESPECIFICACION cES */
+precedence nonassoc error;
+precedence nonassoc ID;	// Inserted by Eclipse plugin
+precedence left ELSE;	// Inserted by Eclipse plugin
+precedence left PROD;
+precedence left PLUS;
+precedence left NOT;
+precedence right AUTOINC;
+precedence left LESS;
+precedence left EQ;
+precedence left AND;
+precedence left PARENOP, PARENCL;
+precedence left CORCHOP, CORCHCL;
+precedence left LLAVEOP, LLAVECL;
+
+// Declaración de reglas de produccion
+
+
+start with program;
+
+program ::= 
+  {: 
+        syntaxErrorManager.syntaxInfo ("Starting parsing..."); 
+   :}
+  axiom:ax
+  {:   		
+  		syntaxErrorManager.syntaxInfo ("Parsing process ended.");
+   :};
+
+axiom ::=
+	 constantes 
+	 decglobal 
+	 principal
+	 decglobal;
+	
+constantes ::=
+	constantes constante |
+	/* vacio */;
+	
+constante ::=
+	CONST ID:i NUM:n SEMICOL |
+	CONST ID:i NUM:n error {: emitirMensajeError("Falta un ; en " + n.getLine() + "despues de " + n.getLexema());:};
+		
+decglobal ::=
+	decglobal variable |
+	decglobal tipo |
+	decglobal funcion |
+	/* vacio */;
+
+declocal ::=
+	declocal variable |
+	declocal tipo |
+	/* vacio */;	
+	
+tipo ::= 
+	TYPE INT ID:i CORCHOP NUM:n CORCHCL SEMICOL |
+	TYPE INT ID:i CORCHOP NUM:n CORCHCL error {: emitirMensajeError("Falta un ; en la definifcion del tipo " + i.getLexema() + " en la linea " + i.getLine() ); :};
+
+variable ::= 
+	INT:i decvariables SEMICOL|
+	ID:i decvariables SEMICOL |
+	INT:i decvariables error {:emitirMensajeError("Se esperaba un  ;  en la definicion de variables de tipo entero en " + i.getLine());:}|
+	ID:i decvariables error {:emitirMensajeError("Se esperaba un  ;  en la definicion de variables de tipo " +i.getLexema() + " en " + i.getLine());:};
+	
+decvariables ::=
+	decvariable COMMA decvariables |
+	decvariable COMMA:c error {:emitirMensajeError("Se esperaba una declaracion de variable despues de , en "  + c.getLine());:} |
+	decvariable;
+
+decvariable ::=
+	ID:i ASIG expresion  |
+	ID:i ASIG error {:emitirMensajeError("Expresion invalida en la asignacion de " + i.getLexema() + " en " + i.getLine());:}|
+	ID:i;
+	
+funcion ::=
+	funcionEntera|
+	funcionVacia ;
+	
+funcionEntera ::=	
+	INT ID:i PARENOP argsDec PARENCL bloqueCodigoFuncion |
+	INT ID:i error argsDec PARENCL bloqueCodigoFuncion {:emitirMensajeError("Se esperaba un parentesis de apertura para la función " + i.getLexema() + " en " + i.getLine() );:}|
+	INT ID:i PARENOP argsDec error bloqueCodigoFuncion  {:emitirMensajeError("Se esperaba un parentesis de cerradura para la función " + i.getLexema() + " en " + i.getLine() );:};
+	
+funcionVacia ::=
+	VOID ID:i PARENOP argsDec PARENCL bloqueCodigoFuncion |
+	VOID ID:i error argsDec PARENCL bloqueCodigoFuncion {:emitirMensajeError("Se esperaba un parentesis de apertura para la función " + i.getLexema() + " en " + i.getLine() );:}|
+	VOID ID:i PARENOP argsDec error bloqueCodigoFuncion  {:emitirMensajeError("Se esperaba un parentesis de cerradura para la función " + i.getLexema() + " en " + i.getLine() );:};
+principal ::= 
+	VOID MAIN PARENOP  PARENCL bloqueCodigoFuncion |
+	VOID MAIN:i error argsDec PARENCL bloqueCodigoFuncion {:emitirMensajeError("Se esperaba un parentesis de apertura para la función principal en " + i.getLine() );:}|
+	VOID MAIN:i PARENOP argsDec error bloqueCodigoFuncion  {:emitirMensajeError("Se esperaba un parentesis de cerradura para la función principal en " + i.getLine());:};
+	
+instrucciones ::=
+	instruccion instrucciones  |
+	instruccionSimple instrucciones |
+	/* vacio */;
+	
+instruccion ::=
+	//instruccionSimple |
+	condicional |
+	bucle |
+	alternativas |
+	bloqueCodigo  error {: emitirMensajeError("Un bloque de codigo no puede introducirse de manera independiente");:};
+
+instruccionSimple ::=
+	asignacion SEMICOL|
+	llamadaVoid SEMICOL |
+	llamadaPrint SEMICOL |
+	RETURN expresion SEMICOL |
+	RETURN SEMICOL |
+	asignacion error {:emitirMensajeError("Falta un ; en una asignacion");:} |
+	llamadaVoid error {: emitirMensajeError("Falta un ; en una llamada a una funcion vacia");:} |
+	llamadaPrint  error {: emitirMensajeError("Falta un ; en una llamada a una funcion de escribir");:} |
+	RETURN:r expresion error {: emitirMensajeError("Falta un ; en " + r.getLine());:}|
+	RETURN:r error {: emitirMensajeError("Falta un ; en " + r.getLine());:} |
+	error SEMICOL:s {: emitirMensajeError("Insturccion invalida antes del ; en " + s.getLine());:};
+	
+
+expresion ::=
+	NUM:n	|
+	llamadaFuncNum |
+	PARENOP expresion PARENCL |
+	PARENOP:p expresion error {: emitirMensajeError("Parentesis mal balanceados, parentesis de apertura en la linea " + p.getLine() + " no esta cerrado");:}  |
+	error expresion PARENCL:p {: emitirMensajeError("Parentesis mal balanceados, parentesis de cerradura en la linea " + p.getLine() + " no cierra nada");:} |
+	expresion PROD expresion |
+	expresion PLUS expresion |
+	expresion AUTOINC | // Identificador de una variable entera
+	accesoVector | // Identificador de un acceso a un vector
+	ID:i |
+	expresion AND expresion |
+	expresion EQ expresion |
+	expresion LESS expresion |
+	NOT expresion |
+	error SEMICOL:s {: emitirMensajeError("Expresion invalida antes del ; en " + s.getLine()); :};
+	
+asignacion ::=
+	ID:i ASIG expresion |
+	ID:i ASIGSUM expresion |
+	ID:i AUTOINC |
+	accesoVector ASIG expresion |
+	accesoVector ASIGSUM expresion |
+	accesoVector AUTOINC  |
+	accesoVector ASIG:a error {:emitirMensajeError("Asignacion invalida en la linea " + a.getLine());:} |
+	accesoVector ASIGSUM:a error {:emitirMensajeError("Asignacion invalida en la linea " + a.getLine());:} |
+	ID:i ASIG:a error {:emitirMensajeError("Asignacion invalida en la linea " + a.getLine());:} |
+	ID:i ASIGSUM:a error {:emitirMensajeError("Asignacion invalida en la linea " + a.getLine());:} ;
+	
+condicional ::=
+	IF PARENOP expresion PARENCL bloqueCodigo  |
+	IF PARENOP expresion PARENCL bloqueCodigo ELSE bloqueCodigo |
+	IF PARENOP expresion PARENCL bloqueCodigo ELSE instruccionSimple |
+	IF PARENOP expresion PARENCL instruccionSimple  |
+	IF PARENOP expresion PARENCL instruccionSimple ELSE bloqueCodigo |
+	IF PARENOP expresion PARENCL instruccionSimple ELSE instruccionSimple |
+	IF:i PARENOP error PARENCL bloqueCodigo  {:emitirMensajeError("Expersion invalida en condicional de la linea " + i.getLine());:}|
+	IF:i PARENOP error PARENCL bloqueCodigo ELSE bloqueCodigo {:emitirMensajeError("Expersion invalida en condicional de la linea " + i.getLine());:}|
+	IF:i PARENOP error PARENCL bloqueCodigo ELSE instruccionSimple{:emitirMensajeError("Expersion invalida en condicional de la linea " + i.getLine());:} |
+	IF:i PARENOP error PARENCL instruccionSimple {:emitirMensajeError("Expersion invalida en condicional de la linea " + i.getLine());:}   |
+	IF:i PARENOP error PARENCL instruccionSimple ELSE bloqueCodigo {:emitirMensajeError("Expersion invalida en condicional de la linea " + i.getLine());:}|
+	IF:i PARENOP error PARENCL instruccionSimple ELSE instruccionSimple{:emitirMensajeError("Expersion invalida en condicional de la linea " + i.getLine());:} ;  
+
+alternativas ::= 
+	SWITCH PARENOP expresion PARENCL LLAVEOP casos  LLAVECL ; 
+	
+casos ::=
+	CASE NUM TWOPOINTS bloqueCodigo BREAK SEMICOL casos|
+	DEFAULT TWOPOINTS bloqueCodigo BREAK SEMICOL |
+	DEFAULT:d TWOPOINTS bloqueCodigo  error  {: emitirMensajeError("No se ha encontrado una directiva parar para el caso predeterminado en la linea "+ d.getLine());:}|
+	DEFAULT:d TWOPOINTS bloqueCodigo BREAK:b error {: emitirMensajeError("Falta un ; en " + b.getLine());:}|
+	CASE NUM TWOPOINTS instruccionSimple BREAK SEMICOL casos|
+	DEFAULT TWOPOINTS instruccionSimple BREAK SEMICOL |
+	DEFAULT:d TWOPOINTS instruccionSimple  error  {: emitirMensajeError("No se ha encontrado una directiva parar para el caso predeterminado en la linea "+ d.getLine());:}|
+	DEFAULT:d TWOPOINTS instruccionSimple BREAK:b error {: emitirMensajeError("Falta un ; en " + b.getLine());:}|
+	/* vacio */; 
+
+bucle ::=
+	WHILE PARENOP expresion PARENCL bloqueCodigo |
+	WHILE PARENOP expresion PARENCL instruccionSimple |
+	WHILE:w PARENOP error PARENCL bloqueCodigo 		{:emitirMensajeError("Expersion invalida en bucle de la linea " + w.getLine());:}|
+	WHILE:w PARENOP error PARENCL instruccionSimple {:emitirMensajeError("Expersion invalida en bucle de la linea " + w.getLine());:};
+
+bloqueCodigoFuncion ::=
+	LLAVEOP decglobal instrucciones LLAVECL |
+	error decglobal instrucciones LLAVECL:l {:emitirMensajeError("Llaves desbalanceadas, llave de cerrado en la linea " + l.getLine() + " no se abren nunca");:}|
+	LLAVEOP:l decglobal instrucciones error {:emitirMensajeError("Llaves desbalanceadas, llave de apertura en la linea " + l.getLine() + " no se cierran nunca");:};
+
+bloqueCodigo ::=
+	LLAVEOP instrucciones LLAVECL |
+	error instrucciones LLAVECL:l {:emitirMensajeError("Llaves desbalanceadas, llave de cerrado en la linea " + l.getLine() + " no se abren nunca");:}|
+	LLAVEOP:l instrucciones error {:emitirMensajeError("Llaves desbalanceadas, llave de apertura en la linea " + l.getLine() + " no se cierran nunca");:};
+	
+llamadaPrint ::=
+	PRINT PARENOP STRING:s PARENCL  |
+	PRINTINT PARENOP expresion PARENCL |
+	PRINT:i error argsIn PARENCL {:emitirMensajeError("Parentesis mal balanceados para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}|
+	PRINT:i PARENOP argsIn error {:emitirMensajeError("Parentesis mal balanceados para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}|
+	PRINT:i PARENOP error PARENCL {:emitirMensajeError("Argumentos de entrada invalidos para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:} |
+	PRINTINT:i error argsIn PARENCL {:emitirMensajeError("Parentesis mal balanceados para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}|
+	PRINTINT:i PARENOP argsIn error {:emitirMensajeError("Parentesis mal balanceados para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}|
+	PRINTINT:i PARENOP error PARENCL {:emitirMensajeError("Argumentos de entrada invalidos para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}; 
+	
+llamadaVoid ::= 
+	ID:i PARENOP argsIn PARENCL |
+	ID:i error argsIn PARENCL {:emitirMensajeError("Parentesis mal balanceados para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}|
+	ID:i PARENOP argsIn error {:emitirMensajeError("Parentesis mal balanceados para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}|
+	ID:i PARENOP error PARENCL {:emitirMensajeError("Argumentos de entrada invalidos para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}; 
+	
+llamadaFuncNum ::=
+	ID:i PARENOP argsIn PARENCL |
+	ID:i error argsIn PARENCL {:emitirMensajeError("Parentesis mal balanceados para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}|
+	ID:i PARENOP argsIn error {:emitirMensajeError("Parentesis mal balanceados para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}|
+	ID:i PARENOP error PARENCL {:emitirMensajeError("Argumentos de entrada invalidos para la llamada a la funcion " + i.getLexema() + " en la linea " + i.getLine());:}; 
+
+argsIn ::=
+	expresion COMMA argsIn |
+	expresion |
+	expresion COMMA:c error {:emitirMensajeError("Se esperaba una entrada de un argumento tras la coma en la linea" + c.getLine());:}|
+	/* vacio */;
+	
+argsDec ::=
+	INT ID COMMA argsDec |
+	INT ID COMMA:c error {:emitirMensajeError("Se esperaba una definicion de un argumento tras la coma en la linea" + c.getLine());:}|
+	INT ID |
+	/* vacio */;
+
+accesoVector ::=
+	ID:i CORCHOP expresion CORCHCL |
+	ID:i error expresion CORCHCL {:emitirMensajeError("Corchetes mal balanceados para el acceso al vector " + i .getLexema() + " en la linea " + i.getLine());:}|
+	ID:i CORCHOP expresion error  {:emitirMensajeError("Corchetes mal balanceados para el acceso al vector " + i .getLexema() + " en la linea " + i.getLine());:} ;
+
+
+
+
