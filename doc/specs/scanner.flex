@@ -63,7 +63,7 @@ ESPACIO_BLANCO=[ \t\r\n\f]
 //FIN = "fin"{ESPACIO_BLANCO} // NO SE UTILIIZA
 LETRA = [a-zA-Z]
 DIGITO = [0-9]
-NUMERO = 0|[1-9]{DIGITO}*
+NUMERO = 0|([1-9]{DIGITO}*)
 ID = {LETRA}({LETRA}|{DIGITO})*
 STRING = \"({LETRA}|{DIGITO}|{ESPACIO_BLANCO})*\"
 
@@ -75,6 +75,8 @@ STRING = \"({LETRA}|{DIGITO}|{ESPACIO_BLANCO})*\"
 {
 
 	"/*" { commentCount++; yybegin(COMMENT); }
+     
+    "*/" { lexicalErrorManager.lexicalError (generateError("ERROR LEXICO: Comentarios mal balanceados: un */ no cierra nada")); } 
      
     "+"  {return createToken(sym.PLUS);}
 	 
@@ -160,7 +162,7 @@ STRING = \"({LETRA}|{DIGITO}|{ESPACIO_BLANCO})*\"
 	// {FIN} {}
     
     // error en caso de coincidir con ningún patrón
-	[^] {lexicalErrorManager.lexicalError (generateError("La expresión no coincide con ningún patrón"));}
+	[^] {lexicalErrorManager.lexicalError (generateError("ERROR LEXICO: La expresión no coincide con ningún patrón"));}
     
 }
 
@@ -172,11 +174,11 @@ STRING = \"({LETRA}|{DIGITO}|{ESPACIO_BLANCO})*\"
 		"*/"	 {
     	 	commentCount--;
     	 	if (commentCount == 0)  yybegin(YYINITIAL);
-    		else if (commentCount < 0) lexicalErrorManager.lexicalError(generateError("Comentarios mal balanceados: un */ no cierra nada"));
+    		else if (commentCount < 0) lexicalErrorManager.lexicalError(generateError("ERROR LEXICO: Comentarios mal balanceados: un */ no cierra nada"));
     	}
     	
     	<<EOF>> {
-    		if (commentCount != 0) lexicalErrorManager.lexicalError(generateError("Comentarios mal balanceados: seguramente un /* no está cerrado"));
+    		if (commentCount != 0) lexicalErrorManager.lexicalError(generateError("ERROR LEXICO: Comentarios mal balanceados: seguramente un /* no está cerrado"));
     	}
     	
     	[^] {/* No hacer nada */}
