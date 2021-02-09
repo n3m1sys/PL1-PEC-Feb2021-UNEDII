@@ -1,0 +1,202 @@
+\documentclass{article}
+
+\usepackage[ansinew]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsbsy}
+\usepackage{mathrsfs}
+\usepackage{pdfpages}
+\usepackage[backend=bibtex,style=alphabetic-verb]{biblatex}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+\addbibresource{bibliografia}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Martín Romera Sobrado}
+\chead{Procesadores del Lenguaje 1}
+\lhead{Practica 2021}
+\cfoot{\thepage}
+
+\begin{document}
+	
+\includepdf[pages={1}]{portadaPL1Febrero.pdf}	
+
+  \tableofcontents
+
+  \newpage
+  
+\section{Analizador Léxico}
+	
+	La implementación del analizador léxico ha sido la más sencilla de las dos, teniendo una imlementación muy directa y mecánica. La única complicación estaba en el tema del reconocimiento de comentarios anidados, para el cual al no poder ser descrito mediante expresiones regulares, creo un nuevo estado en el analizador lexico llamado \texttt{COMMENT} en el que se entra cuando este lee el símbolo ``\texttt{/*}''. En este estado con ayuda de un contador, comprobamos que que esten balanceados los ``\texttt{/*}'' (incrementando el contador) y los ``\texttt{*/}'' (reduciendo el contador). Si se llegara a leer ``\texttt{*/}'' y el contador estuviera a 0 volveriamos al estado inicial \texttt{YYINITIAL} y si llegaramos al final del archivo (\texttt{<<EOF>>}) con el contador en números positivos, generamos un error. También se genera un error si en \texttt{YYINITIAL} se lee el simbolo ``\texttt{*/}''.\\
+		
+	Otra operación a destacar en el reconocimiento de simbolos es para las \textit{Strings} a las que se les sustraen las comillas (\texttt{``} y \texttt{''}) antes de mandarlas al analizador sintáctico.\\
+		
+	Para simplificar la tarea de generación de errores y tokens, se crean dos metodos dedicados a ello (\texttt{generateError()} y \texttt{createToken()}), que realizan todas las tareas necesarias para sus respectivas operaciones.\\
+		
+	Finalmente para simplificar el reconocimiento de símbolos se crean las siguientes expresiones regulares:
+	\begin{center}
+		\texttt{ESPACIO\_BLANCO = [\textbackslash t\textbackslash r \textbackslash n \textbackslash f]}\\
+		\texttt{LETRA = [a-zA-Z]}\\
+		\texttt{DIGITO = [0-9]}\\
+		\texttt{NUMERO = 0|([1-9]\{DIGITO\}*)}\\
+		\texttt{ID = {LETRA}|({LETRA}|{DIGITO})*}\\
+		\texttt{STRING = \textbackslash``({LETRA}|{DIGITO}|{ESPACIO\_BLANCO})*\textbackslash ''}
+	\end{center}
+	La expresión regular \texttt{FIN} incluida en la plantilla no se utiliza y por eso se encuentra comentada.
+		
+\section{Analizador Sintáctico}
+
+	La implementación del analizador sintáctico ha sido más complicada y ha
+  requerido de algunas interpretaciones sobre alguna que ha quedado en duda
+  de como tiene que definirse el lenguaje \textit{cES}. La primera
+  interpretaciónse hace con la producción del $axiom$. No quedaba muy claro si
+  se podían realizar declaraciones globales tras la definición de la función
+  principal de forma que en mi implementación se permite realizar declaraciones
+  globales tras la función principal. Otra duda surge porque uno de los ejemplos
+  propuestos por el equipo docente (el \texttt{testCase10.ces}) se introduce un
+  bloque de código sin instrucción. Aunque algunos lenguajes tipo \textit{C}
+  permitan esto, al no estar definido en las directrices de implementación, esta
+  lo toma como un error a proposito, indicando que esa construcción no está
+  permitida. Finalmente el analizador sintáctico no realiza distinciones entre
+  expresiones booleanas y expresiones numéricas, ya que no existe el tipo
+  ``booleano'' y los operadores lógicos operan realmente con enteros produciendo
+  otro entero. Las comprobaciones de si los números comparandose mediante un
+  operador lógico deberán posponerse a siguientes fases del compilador o la
+  propia ejecución del código. \\
+  
+  Aunque no se pide la recuperación de errores, si que se ha implementado el
+  reconocimiento de varios errores comunes que pueden ocurrir al programar en
+  \textit{cES}:
+  \begin{itemize}
+
+    \item Simbolos ``;'' faltantes en instrucciones simples e instrucciones de corte.
+    \item Parentesis mal balanceados en declaraciones de funciones, llamadas a
+      funciones (print, vacias y numericas), contenedores de expresiones
+      booleanas para condicionales y bucles, contenedores de expresiones para
+      instrucciones de alternativas, y expresiones con parentesis anidados.
+    \item Corchetes mal balanceados en producciones relacionadas con vectores
+      (accesos y declaraciones de tipos).
+    \item Llaves mal balanceadas en bloques de código de funciones y bloques de
+      código generales.
+    \item Expresiones númericas mal formadas.
+    
+  \end{itemize}
+
+  Para todos estos errores se muestra un mensaje de error detallando donde ha
+  detectado el error, por lo general indicando el simbolo previo o posterior a detectar un
+  error y que se esperaba en ese punto. \\
+
+  Las precedencias definidas con las que se instruyen en el enunciado de la
+  especificación de \textit{cES} con la adición de algunas que han sido
+  necesarias para poder declarar las producciones de error (recomendadas por el
+  propio plugin de cup de eclipse al encontrar conflictos desplazar-reducir).
+  
+\section{Conclusiones}
+
+	El desarrollo de la práctica ha sido interesante y me ha ayudado a afianzar
+  algunos concpetos de la teoría del libro, aunque por otra parte algunos temas
+  (en concreto temas 4 y 5) no los he visto muy necesarios para finalizar la
+  actividad, ya que tenía el analizador sintáctico prácticamente terminado para
+  cuando finalicé el estudio del tema 3. \\
+
+  La detección de errores durante el desarrollo del analizador sintáctico ha
+  sido una tarea a destacar, ya que la depuración del parser ha sido complicada,
+  porque el propio compilador de cup no es muy preciso dando información sobre
+  donde hay un error (algo que motiva a esforzarse en el compilador de la
+  actividad para crear mensajes de detección de errores de calidad). Errores
+  como un simple ``|'' faltante entre dos producciones eran errores muy
+  dificiles de identificar por la falta (o desconocimiento de la existencia) de
+  un debugger. Para el analizador léxico tampoco existe una herramienta del
+  estilo, pero al ser un modulo mucho más sencillo de implementar, no lo he
+  echado en falta hasta llegar al analizador sintáctico.\\
+
+\section{Gramática}
+
+\allowdisplaybreaks
+
+\begin{align}
+  program \rightarrow & \, axiom \\
+  axiom \rightarrow & \, constantes \, decglobal \, principal \, decglobal \\
+  constantes \rightarrow & \, constantes \, constante \\\nonumber
+  | & \, \epsilon \\
+  constante \rightarrow & \, \texttt{CONST} \, \texttt{NUM} \, \texttt{SEMICOL} \\
+  decglobal \rightarrow & \, decglobal \, variable \\\nonumber
+  | & \, decglobal \, tipo \\\nonumber
+  | & \, decglobal \, funcion \\\nonumber
+  | & \, \epsilon \\
+  declocal \rightarrow & \, declocal \, variable \\\nonumber
+  | & \, declocal \, tipo \\\nonumber
+  | & \, \epsilon \\
+  tipo \rightarrow & \, \texttt{TYPE} \, \texttt{INT} \, \texttt{ID} \, \texttt{CORCHOP} \, \texttt{NUM} \, \texttt{CORCHCL} \, \texttt{SEMICOL} \\
+  variable \rightarrow & \, \texttt{INT} \, decvariables \, \texttt{SEMICOL} \\\nonumber
+  | & \, \texttt{ID} \, decvariables \, \texttt{SEMICOL} \\
+  decvariables \rightarrow & \, decvariable \, \texttt{COMMA} \, decvariables \\\nonumber
+  | & \, decvariable \\
+  decvariable \rightarrow & \, \texttt{ID} \, \texttt{ASIG} \, expresion \\\nonumber
+  | & \, \texttt{ID} \\
+  funcion \rightarrow & \, funcionEntera \\\nonumber
+  | & \, funcionVacia \\
+  funcionEntera \rightarrow & \, \texttt{INT} \, \texttt{ID} \, \texttt{PARENOP} \, argsDec \, \texttt{PARENCL} \, bloqueCodigoFuncion \\
+  funcionVacia \rightarrow & \, \texttt{VOID} \, \texttt{ID} \, \texttt{PARENOP} \, argsDec \, \texttt{PARENCL} \, bloqueCodigoFuncion \\
+  principal \rightarrow & \, \texttt{VOID} \, \texttt{MAIN} \, \texttt{PARENOP} \, argsDec \, \texttt{PARENCL} \, bloqueCodigoFuncion \\
+  instrucciones \rightarrow & \, instruccion \, instrucciones \\\nonumber
+  | & \, instruccionSimple \, instrucciones \\\nonumber
+  | & \, \epsilon \\
+  insttruccion \rightarrow & \, condicional \\\nonumber
+  | & \, bucle \\\nonumber
+  | & \, alternativas \\
+  instruccionSimple \rightarrow & \, asignacion \, \texttt{SEMICOL} \\\nonumber
+  | & \, llamadaVoid \, \texttt{SEMICOL} \\\nonumber
+  | & \, llamadaPrint \, \texttt{SEMICOL} \\\nonumber
+  | & \, \texttt{RETURN} \, expresion \, \texttt{SEMICOL} \\\nonumber
+  | & \, \texttt{RETURN} \, \texttt{SEMICOL} \\
+  expresion \rightarrow & \, \texttt{NUM} \\\nonumber
+  | & \, llamadaFuncNum \\\nonumber
+  | & \, \texttt{PARENOP} expresion \texttt{PARENOP} \\\nonumber
+  | & \, expresion \, \texttt{PROD} \, expresion \\\nonumber
+  | & \, expresion \, \texttt{PLUS} \, expresion \\\nonumber
+  | & \, expresion \, \texttt{AUTOINC} \\\nonumber
+  | & \, accesoVector \\\nonumber
+  | & \, \texttt{ID} \\\nonumber
+  | & \, expresion \, \texttt{AND} \, expresion \\\nonumber
+  | & \, expresion \, \texttt{EQ} \, expresion \\\nonumber
+  | & \, expresion \, \texttt{LESS} \, expresion \\\nonumber
+  | & \, \texttt{NOT} \, expresion \\
+  asignacion \rightarrow & \, \texttt{ID} \, \texttt{ASIG} \, expresion \\\nonumber
+  | & \, \texttt{ID} \, \texttt{ASIGSUM} \, expresion \\\nonumber
+  | & \, \texttt{ID} \, \texttt{AUTOINC} \\\nonumber
+  | & \, accesoVector \, \texttt{ASIG} expresion \\\nonumber
+  | & \, accesoVector \, \texttt{ASIGSUM} expresion \\\nonumber
+  | & \, accesoVector \, \texttt{AUTOINC} \\
+  condicional \rightarrow & \, \texttt{IF} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \, bloqueCodigo \\\nonumber
+  | & \, \texttt{IF} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \, bloqueCodigo \, \texttt{ELSE} \, bloqueCodigo \\\nonumber
+  | & \, \texttt{IF} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \, bloqueCodigo \, \texttt{ELSE} \, instruccionSimple \\\nonumber
+  | & \, \texttt{IF} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \, instruccionSimple \\\nonumber
+  | & \, \texttt{IF} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \, instruccionSimple \, \texttt{ELSE} \, bloqueCodigo \\\nonumber
+  | & \, \texttt{IF} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \, instruccionSimple \, \texttt{ELSE} \, instruccionSimple \\
+  casos \rightarrow | & \, \texttt{CASE} \, \texttt{NUM} \, \texttt{TWOPOINTS} \, bloqueCodigo \, \texttt{BREAK} \, \texttt{SEMICOL} \, casos \\\nonumber
+  | & \, \texttt{DEFAULT} \, \texttt{TWOPOINTS} \, bloqueCodigo \, \texttt{BREAK} \, \texttt{SEMICOL} \\\nonumber
+  | & \, \texttt{CASE} \,  \texttt{NUM} \, \texttt{TWOPOINTS} \, instruccionSimple \, \texttt{BREAK} \, \texttt{SEMICOL} \, casos \\\nonumber
+  | & \, \texttt{DEFAULT} \, \texttt{TWOPOINTS} \, instruccionSimple \, \texttt{BREAK} \, \texttt{SEMICOL} \\\nonumber
+  bucle \rightarrow | & \, \texttt{WHILE} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \, bloqueCodigo \\\nonumber
+  | & \, \texttt{WHILE} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \, instruccionSimple \\
+  bloqueCodigoFuncion \rightarrow & \, \texttt{LLAVEOP} \, decglobal \, instrucciones \, \texttt{LLAVECL} \\
+  bloqueCodigo \rightarrow & \, \texttt{LLAVEOP} \, instrucciones \, \texttt{LLAVECL} \\
+  llamadaPrint \rightarrow & \, \texttt{PRINT} \, \texttt{PARNEOP} \, \texttt{STRING} \, \texttt{PARENCL} \\\nonumber
+  | & \, \texttt{PRINTINT} \, \texttt{PARENOP} \, expresion \, \texttt{PARENCL} \\
+  llamadaVoid \rightarrow & \, \texttt{ID} \, \texttt{PARENOP} \, argsIn \, \texttt{PARENCL} \\
+  llamadaFuncNum \rightarrow & \, \texttt{ID} \, \texttt{PARENOP} \, argsIn \, \texttt{PARENCL} \\
+  argsIn \rightarrow & \, expresion \, \texttt{COMMA} \, argsIn \\\nonumber
+  | & \, expresion \\\nonumber
+  | & \, \epsilon \\
+  argsDec \rightarrow & \, \texttt{INT} \, \texttt{ID} \, \texttt{COMMA} \, argsDec \\\nonumber
+  | & \, \texttt{INT} \, \texttt{ID} \\\nonumber
+  | & \epsilon \\
+  accesoVector \rightarrow & \, \texttt{ID} \, \texttt{CORCHOP} \, expresion \texttt{CORCHCLI} 
+\end{align}
+
+\end{document}
